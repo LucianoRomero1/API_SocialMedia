@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const jwt = require("../services/jwt");
+const pagination = require("mongoose-pagination");
 
 const register = (req, res) => {
   let params = req.body;
@@ -97,8 +98,62 @@ const login = (req, res) => {
   });
 };
 
+const profile = (req, res) => {
+  const id = req.params.id;
+
+  User.findById(id)
+    //ignore password and role
+    .select({ password: 0, role: 0 })
+    .exec((error, userProfile) => {
+      if (error || !userProfile) {
+        return res.status(404).send({
+          status: "error",
+          message: "User doesnt exist",
+        });
+      }
+
+      return res.status(200).json({
+        status: "success",
+        user: userProfile,
+      });
+    });
+};
+
+const list = (req, res) => {
+  let page = 1;
+  if (req.params.page) {
+    page = req.params.page;
+  }
+  page = parseInt(page);
+
+  let itemsPerPage = 5;
+
+  User.find()
+    .sort("_id")
+    .paginate(page, itemsPerPage, (error, users, total) => {
+      if (error || !users) {
+        return res.status(404).send({
+          status: "error",
+          message: "No users available",
+          error,
+        });
+      }
+
+      return res.status(200).send({
+        status: "success",
+        users,
+        page,
+        itemsPerPage,
+        total,
+        pages: Math.ceil(total, itemsPerPage),
+      });
+    });
+};
+
 module.exports = {
   testUser,
   register,
   login,
+  profile,
+  list,
 };
