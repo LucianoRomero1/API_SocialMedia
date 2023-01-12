@@ -150,10 +150,81 @@ const list = (req, res) => {
     });
 };
 
+const update = (req, res) => {
+  let userIdentity = req.user;
+  let userToUpdate = req.body;
+
+  delete userIdentity.iat;
+  delete userIdentity.exp;
+  delete userIdentity.role;
+  delete userIdentity.image;
+
+  User.find({
+    $or: [
+      { email: userToUpdate.email.toLowerCase },
+      { nick: userToUpdate.nick.toLowerCase },
+    ],
+  }).exec(async (error, users) => {
+    if (error) {
+      return res.status(500).json({
+        status: "error",
+        message: "User query error",
+      });
+    }
+
+    //Esto es pq si el user que me llega con datos a actualizar es el mismo, su propio correo va a decir que ya existe
+    //Entonces se usa esta flag
+    let userIsset = false;
+    users.forEach((user) => {
+      if (user && user._id != userIdentity.id) {
+        userIsset = true;
+      }
+    });
+
+    if (userIsset) {
+      return res.status(200).send({
+        status: "success",
+        message: "User already exist",
+      });
+    }
+
+    if (userToUpdate.password) {
+      let pwd = await bcrypt.hash(userToUpdate.password, 10);
+      userToUpdate.password = pwd;
+    }
+
+    try {
+      let userUpdated = await User.findByIdAndUpdate(
+        userIdentity.id,
+        userToUpdate,
+        { new: true }
+      );
+
+      if (!userUpdated) {
+        return res.status(400).send({
+          status: "error",
+          message: "Error updating user",
+        });
+      }
+
+      return res.status(200).send({
+        status: "success",
+        message: "User updated",
+        user: userUpdated,
+      });
+    } catch (error) {
+        return res.status(500).send({
+          status: "error",
+          message: "Error updating user",
+        });
+    }
+  });
+};
+
 module.exports = {
-  testUser,
   register,
   login,
   profile,
   list,
+  update,
 };
