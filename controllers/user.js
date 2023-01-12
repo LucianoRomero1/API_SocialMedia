@@ -2,6 +2,8 @@ const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const jwt = require("../services/jwt");
 const pagination = require("mongoose-pagination");
+const fs = require("fs");
+const path = require("path");
 
 const register = (req, res) => {
   let params = req.body;
@@ -213,11 +215,79 @@ const update = (req, res) => {
         user: userUpdated,
       });
     } catch (error) {
+      return res.status(500).send({
+        status: "error",
+        message: "Error updating user",
+      });
+    }
+  });
+};
+
+const upload = (req, res) => {
+  if (!req.file) {
+    return res.status(404).send({
+      status: "error",
+      message: "File doesnt exist",
+    });
+  }
+
+  let image = req.file.originalname;
+
+  const imageSplit = image.split(".");
+  const extension = imageSplit[1];
+
+  if (
+    extension != "png" ||
+    extension != "jpg" ||
+    extension != "jpeg" ||
+    extension != "gif"
+  ) {
+    const filePath = req.file.path;
+    //FileSystem - Borro el archivo
+    const fileDeleted = fs.unlinkSync(filePath);
+
+    return res.status(400).json({
+      status: "error",
+      message: "Invalid extension",
+    });
+  }
+
+  //new: true te actualiza el objeto
+  User.findOneAndUpdate(
+    req.user.id,
+    { image: req.file.filename },
+    { new: true },
+    (error, userUpdated) => {
+      if (error || !userUpdated) {
         return res.status(500).send({
           status: "error",
-          message: "Error updating user",
+          message: "Error updating image",
         });
+      }
+
+      return res.status(200).send({
+        status: "success",
+        user: userUpdated,
+        file: req.file,
+      });
     }
+  );
+};
+
+const avatar = (req, res) => {
+  const file = req.params.file;
+  const filePath = "./uploads/avatar/" + file;
+
+  //Compruebo si existe con stat
+  fs.stat(filePath, (error, exists) => {
+    if (error || !exists) {
+      return res.status(404).send({
+        status: "error",
+        message: "Image doesnt exist",
+      });
+    }
+
+    return res.sendFile(path.resolve(filePath));
   });
 };
 
@@ -227,4 +297,6 @@ module.exports = {
   profile,
   list,
   update,
+  upload,
+  avatar,
 };
