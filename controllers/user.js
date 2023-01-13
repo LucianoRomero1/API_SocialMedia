@@ -4,6 +4,7 @@ const jwt = require("../services/jwt");
 const pagination = require("mongoose-pagination");
 const fs = require("fs");
 const path = require("path");
+const followService = require("../services/followService");
 
 const register = (req, res) => {
   let params = req.body;
@@ -106,7 +107,7 @@ const profile = (req, res) => {
   User.findById(id)
     //ignore password and role
     .select({ password: 0, role: 0 })
-    .exec((error, userProfile) => {
+    .exec(async(error, userProfile) => {
       if (error || !userProfile) {
         return res.status(404).send({
           status: "error",
@@ -114,9 +115,13 @@ const profile = (req, res) => {
         });
       }
 
+      const followInfo = await followService.followThisUser(req.user.id, id);
+
       return res.status(200).json({
         status: "success",
         user: userProfile,
+        following: followInfo.following,
+        follower: followInfo.follower,
       });
     });
 };
@@ -132,7 +137,7 @@ const list = (req, res) => {
 
   User.find()
     .sort("_id")
-    .paginate(page, itemsPerPage, (error, users, total) => {
+    .paginate(page, itemsPerPage, async(error, users, total) => {
       if (error || !users) {
         return res.status(404).send({
           status: "error",
@@ -141,6 +146,8 @@ const list = (req, res) => {
         });
       }
 
+      let followUserIds = await followService.followUserIds(req.user.id);
+
       return res.status(200).send({
         status: "success",
         users,
@@ -148,6 +155,8 @@ const list = (req, res) => {
         itemsPerPage,
         total,
         pages: Math.ceil(total, itemsPerPage),
+        user_following: followUserIds.following,
+        user_follow_me: followUserIds.followers,
       });
     });
 };

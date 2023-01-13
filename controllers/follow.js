@@ -1,5 +1,8 @@
 const Follow = require("../models/follow");
 const User = require("../models/user");
+const pagination = require("mongoose-pagination");
+
+const followService = require("../services/followService");
 
 const save = (req, res) => {
   const params = req.body;
@@ -52,7 +55,63 @@ const unfollow = (req, res) => {
   });
 };
 
+const following = (req, res) => {
+  let userId = req.params.id ? req.params.id : req.user.id;
+  let page = req.params.page ? req.params.page : 1;
+
+  const itemPerPage = 5;
+
+  //Populate es para obtener los objetos enteros a traves de los id
+  Follow.find({ user: userId })
+    .populate("user followed", "-password -role -__v")
+    .paginate(page, itemsPerPage, async(error, follows, total) => {
+
+      let followUserIds = await followService.followUserIds(req.user.id);
+
+      return res.status(200).send({
+        status: "success",
+        message: "List of users that I am following",
+        follows,
+        total,
+        pages: Math.ceil(total / itemsPerPage),
+        user_following: followUserIds.following,
+        user_follow_me: followUserIds.followers,
+      });
+    });
+};
+
+const followers = (req, res) => {
+  let userId = req.params.id ? req.params.id : req.user.id;
+  let page = req.params.page ? req.params.page : 1;
+
+  const itemPerPage = 5;
+
+  Follow.find({ followed: userId })
+    .populate("user", "-password -role -__v")
+    .paginate(page, itemsPerPage, async(error, follows, total) => {
+
+    let followUserIds = await followService.followUserIds(req.user.id);
+
+    return res.status(200).send({
+      status: "success",
+      message: "List of users who follow me",
+      follows,
+      total,
+      pages: Math.ceil(total / itemsPerPage),
+      user_following: followUserIds.following,
+      user_follow_me: followUserIds.followers,
+    });
+  });
+
+  return res.status(200).send({
+    status: "success",
+    message: "List of users who follow me",
+  });
+};
+
 module.exports = {
   save,
   unfollow,
+  following,
+  followers,
 };
