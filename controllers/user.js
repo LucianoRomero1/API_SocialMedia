@@ -5,6 +5,8 @@ const pagination = require("mongoose-pagination");
 const fs = require("fs");
 const path = require("path");
 const followService = require("../services/followService");
+const publication = require("../models/publication");
+const validate = require("../helpers/validate");
 
 const register = (req, res) => {
   let params = req.body;
@@ -12,6 +14,15 @@ const register = (req, res) => {
     return res.status(400).json({
       status: "error",
       message: "Missing parameters",
+    });
+  }
+
+  try {
+    validate(params);
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: error
     });
   }
 
@@ -107,7 +118,7 @@ const profile = (req, res) => {
   User.findById(id)
     //ignore password and role
     .select({ password: 0, role: 0 })
-    .exec(async(error, userProfile) => {
+    .exec(async (error, userProfile) => {
       if (error || !userProfile) {
         return res.status(404).send({
           status: "error",
@@ -136,8 +147,9 @@ const list = (req, res) => {
   let itemsPerPage = 5;
 
   User.find()
+    .select("-password -email -role -__v")
     .sort("_id")
-    .paginate(page, itemsPerPage, async(error, users, total) => {
+    .paginate(page, itemsPerPage, async (error, users, total) => {
       if (error || !users) {
         return res.status(404).send({
           status: "error",
@@ -202,6 +214,8 @@ const update = (req, res) => {
     if (userToUpdate.password) {
       let pwd = await bcrypt.hash(userToUpdate.password, 10);
       userToUpdate.password = pwd;
+    }else{
+      delete userToUpdate.password;
     }
 
     try {
@@ -263,7 +277,7 @@ const upload = (req, res) => {
 
   //new: true te actualiza el objeto
   User.findOneAndUpdate(
-    req.user.id,
+    { _id: req.user.id },
     { image: req.file.filename },
     { new: true },
     (error, userUpdated) => {
@@ -300,6 +314,30 @@ const avatar = (req, res) => {
   });
 };
 
+const counters = async (req, res) => {
+  let userId = req.params.id ? req.params.id : req.user.id;
+
+  try {
+    const following = await Follow.count({ user: userId });
+    const followed = await Follow.count({ followed: userId });
+    const publications = await publication.count({user: userId});
+
+    return res.status(200).send({
+      status: "success",
+      userId,
+      following,
+      followed,
+      publications
+    })
+  } catch (error) {
+    return res.status(500).send({
+      status: "error",
+      message: "Error in counters",
+      error
+    })
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -308,4 +346,5 @@ module.exports = {
   update,
   upload,
   avatar,
+  counters
 };

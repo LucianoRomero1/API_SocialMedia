@@ -63,7 +63,7 @@ const following = (req, res) => {
 
   //Populate es para obtener los objetos enteros a traves de los id
   Follow.find({ user: userId })
-    .populate("user followed", "-password -role -__v")
+    .populate("user followed", "-password -role -__v -email")
     .paginate(page, itemsPerPage, async(error, follows, total) => {
 
       let followUserIds = await followService.followUserIds(req.user.id);
@@ -87,7 +87,7 @@ const followers = (req, res) => {
   const itemPerPage = 5;
 
   Follow.find({ followed: userId })
-    .populate("user", "-password -role -__v")
+    .populate("user", "-password -role -__v -email")
     .paginate(page, itemsPerPage, async(error, follows, total) => {
 
     let followUserIds = await followService.followUserIds(req.user.id);
