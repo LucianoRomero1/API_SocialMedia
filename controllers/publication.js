@@ -7,6 +7,8 @@ const followService = require("../services/followService");
 const save = (req, res) => {
   const params = req.body;
 
+  console.log(params);
+
   if (!params.text) {
     return res.status(400).send({
       status: "error",
@@ -119,9 +121,9 @@ const upload = (req, res) => {
   const extension = imageSplit[1];
 
   if (
-    extension != "png" ||
-    extension != "jpg" ||
-    extension != "jpeg" ||
+    extension != "png" &&
+    extension != "jpg" &&
+    extension != "jpeg" &&
     extension != "gif"
   ) {
     const filePath = req.file.path;
@@ -141,6 +143,9 @@ const upload = (req, res) => {
     { new: true },
     (error, publicationUpdated) => {
       if (error || !publicationUpdated) {
+        const filePath = req.file.path;
+        //FileSystem - Borro el archivo
+        const fileDeleted = fs.unlinkSync(filePath);
         return res.status(500).send({
           status: "error",
           message: "Error updating image",
@@ -181,31 +186,29 @@ const feed = async (req, res) => {
   try {
     const myFollows = await followService.followUserIds(req.user.id);
 
-    const publications = await Publication.find({
+    const publications = Publication.find({
       user: { $in: myFollows.following },
     })
       .populate("user", "-password -role -__v -email")
-      .sort("-created_at");
+      .sort("-created_at")
+      .paginate(page, itemsPerPage, (error, publications, total) => {
+        if (error || !publications) {
+          return res.status(500).send({
+            status: "error",
+            message: "No posts to show",
+          });
+        }
 
-    publications.paginate(page, itemsPerPage, (error, publications, total) => {
-      if (error || !publications) {
-        return res.status(500).send({
-          status: "error",
-          message: "No posts to show",
+        return res.status(200).send({
+          status: "success",
+          message: "Post feed",
+          following: myFollows.following,
+          total,
+          page,
+          pages: Math.ceil(total / itemsPerPage),
+          publications,
         });
-      }
-
-      return res.status(200).send({
-        status: "success",
-        message: "Post feed",
-        following: myFollows.following,
-        total,
-        page,
-        itemsPerPage,
-        pages: Math.ceil(total / itemsPerPage),
-        publications,
       });
-    });
   } catch (error) {
     return res.status(500).send({
       status: "error",

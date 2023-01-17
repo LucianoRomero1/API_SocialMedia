@@ -59,7 +59,7 @@ const following = (req, res) => {
   let userId = req.params.id ? req.params.id : req.user.id;
   let page = req.params.page ? req.params.page : 1;
 
-  const itemPerPage = 5;
+  const itemsPerPage = 5;
 
   //Populate es para obtener los objetos enteros a traves de los id
   Follow.find({ user: userId })
@@ -84,7 +84,7 @@ const followers = (req, res) => {
   let userId = req.params.id ? req.params.id : req.user.id;
   let page = req.params.page ? req.params.page : 1;
 
-  const itemPerPage = 5;
+  const itemsPerPage = 5;
 
   Follow.find({ followed: userId })
     .populate("user", "-password -role -__v -email")

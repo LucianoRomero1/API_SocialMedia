@@ -28,8 +28,8 @@ const register = (req, res) => {
 
   User.find({
     $or: [
-      { email: params.email.toLowerCase },
-      { nick: params.nick.toLowerCase },
+      { email: params.email.toLowerCase() },
+      { nick: params.nick.toLowerCase() },
     ],
   }).exec(async (error, users) => {
     if (error) {
@@ -80,7 +80,7 @@ const login = (req, res) => {
     });
   }
 
-  User.findOne({ email: params.email }).exec((error, user) => {
+  User.findOne({ email: params.email.toLowerCase() }).exec((error, user) => {
     if (error || !user) {
       return res.status(404).send({
         status: "error",

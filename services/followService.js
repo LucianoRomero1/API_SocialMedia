@@ -2,31 +2,31 @@ const Follow = require("../models/follow");
 
 const followUserIds = async (identityUserId) => {
   try {
-    let following = await Follow.find({ "user": identityUserId })
+    let following = await Follow.find({ user: identityUserId })
       .select({
-        "followed": 1,
-        "_id": 0
+        followed: 1,
+        _id: 0,
       })
       .exec();
 
-    let followers = await Follow.find({ "followed": identityUserId })
-    .select({
-      "user": 1,
-      "_id": 0
-    })
-    .exec();
+    let followers = await Follow.find({ followed: identityUserId })
+      .select({
+        user: 1,
+        _id: 0,
+      })
+      .exec();
 
     //Convert objects to array
     let followingClean = [];
 
-    following.forEach(follow => {
-        followingClean.push(follow.followed);
+    following.forEach((follow) => {
+      followingClean.push(follow.followed);
     });
 
     let followersClean = [];
 
-    followers.forEach(follow => {
-        followersClean.push(follow.user);
+    followers.forEach((follow) => {
+      followersClean.push(follow.user);
     });
 
     return {
@@ -39,16 +39,22 @@ const followUserIds = async (identityUserId) => {
 };
 
 const followThisUser = async (identityUserId, profileUserId) => {
-    let following = await Follow.findOne({ "user": identityUserId, "followed": profileUserId});
-    let follower = await Follow.findOne({ "user": profileUserId, "followed": identityUserId });
+  let following = await Follow.findOne({
+    user: identityUserId,
+    followed: profileUserId,
+  });
+  let follower = await Follow.findOne({
+    user: profileUserId,
+    followed: identityUserId,
+  });
 
-    return {
-        following,
-        follower
-    }
+  return {
+    following,
+    follower,
+  };
 };
 
 module.exports = {
-    followUserIds,
-    followThisUser,
+  followUserIds,
+  followThisUser,
 };

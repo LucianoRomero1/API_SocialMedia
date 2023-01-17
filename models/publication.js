@@ -5,7 +5,7 @@ const PublicationSchema = Schema ({
         type: Schema.ObjectId,
         ref: "User"
     },
-    test: {
+    text: {
         type: String,
         required: true
     },
