@@ -22,7 +22,7 @@ const register = (req, res) => {
   } catch (error) {
     return res.status(500).send({
       status: "error",
-      message: error
+      message: "Invalid parameters",
     });
   }
 
@@ -214,7 +214,7 @@ const update = (req, res) => {
     if (userToUpdate.password) {
       let pwd = await bcrypt.hash(userToUpdate.password, 10);
       userToUpdate.password = pwd;
-    }else{
+    } else {
       delete userToUpdate.password;
     }
 
@@ -260,9 +260,9 @@ const upload = (req, res) => {
   const extension = imageSplit[1];
 
   if (
-    extension != "png" ||
-    extension != "jpg" ||
-    extension != "jpeg" ||
+    extension != "png" &&
+    extension != "jpg" &&
+    extension != "jpeg" &&
     extension != "gif"
   ) {
     const filePath = req.file.path;
@@ -299,11 +299,13 @@ const upload = (req, res) => {
 
 const avatar = (req, res) => {
   const file = req.params.file;
-  const filePath = "./uploads/avatar/" + file;
+  const filePath = "./uploads/avatars/" + file;
+
+  console.log(filePath);
 
   //Compruebo si existe con stat
   fs.stat(filePath, (error, exists) => {
-    if (error || !exists) {
+    if (!exists) {
       return res.status(404).send({
         status: "error",
         message: "Image doesnt exist",
@@ -320,21 +322,21 @@ const counters = async (req, res) => {
   try {
     const following = await Follow.count({ user: userId });
     const followed = await Follow.count({ followed: userId });
-    const publications = await publication.count({user: userId});
+    const publications = await publication.count({ user: userId });
 
     return res.status(200).send({
       status: "success",
       userId,
       following,
       followed,
-      publications
-    })
+      publications,
+    });
   } catch (error) {
     return res.status(500).send({
       status: "error",
       message: "Error in counters",
-      error
-    })
+      error,
+    });
   }
 };
 
@@ -346,5 +348,5 @@ module.exports = {
   update,
   upload,
   avatar,
-  counters
+  counters,
 };
