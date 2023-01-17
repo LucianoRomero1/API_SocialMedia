@@ -1,12 +1,19 @@
+//Dependencies & Modules
 const bcrypt = require("bcrypt");
-const User = require("../models/user");
-const jwt = require("../services/jwt");
 const pagination = require("mongoose-pagination");
 const fs = require("fs");
 const path = require("path");
+
+//Services
+const jwt = require("../services/jwt");
 const followService = require("../services/followService");
-const publication = require("../models/publication");
 const validate = require("../helpers/validate");
+
+//Models
+const User = require("../models/user");
+const Follow = require("../models/follow");
+const Publication = require("../models/publication");
+
 
 const register = (req, res) => {
   let params = req.body;
@@ -320,9 +327,9 @@ const counters = async (req, res) => {
   let userId = req.params.id ? req.params.id : req.user.id;
 
   try {
-    const following = await Follow.count({ user: userId });
-    const followed = await Follow.count({ followed: userId });
-    const publications = await publication.count({ user: userId });
+    const following = await Follow.count({ "user": userId });
+    const followed = await Follow.count({ "followed": userId });
+    const publications = await Publication.count({ "user": userId });
 
     return res.status(200).send({
       status: "success",
