@@ -308,8 +308,6 @@ const avatar = (req, res) => {
   const file = req.params.file;
   const filePath = "./uploads/avatars/" + file;
 
-  console.log(filePath);
-
   //Compruebo si existe con stat
   fs.stat(filePath, (error, exists) => {
     if (!exists) {

@@ -7,8 +7,6 @@ const followService = require("../services/followService");
 const save = (req, res) => {
   const params = req.body;
 
-  console.log(params);
-
   if (!params.text) {
     return res.status(400).send({
       status: "error",

@@ -102,11 +102,6 @@ const followers = (req, res) => {
       user_follow_me: followUserIds.followers,
     });
   });
-
-  return res.status(200).send({
-    status: "success",
-    message: "List of users who follow me",
-  });
 };
 
 module.exports = {
